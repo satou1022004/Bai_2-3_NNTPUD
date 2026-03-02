@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>API Tester — BT_2_3_NNPTUD</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --card: #1e1e24;
+    --border: #2a2a35;
+    --accent: #00e5ff;
+    --accent2: #ff3cac;
+    --accent3: #7b2fff;
+    --success: #00e676;
+    --error: #ff5252;
+    --warn: #ffd740;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-display: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BG grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 40px 48px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .logo {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 800;
+    font-family: var(--font-display);
+    color: #000;
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .status-dot {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--muted);
+  }
+
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .layout {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr;
+    height: calc(100vh - 101px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 0 16px;
+    margin-bottom: 24px;
+  }
+
+  .sidebar-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 8px;
+    margin-bottom: 8px;
+  }
+
+  .nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+  }
+
+  .nav-btn:hover { background: var(--card); color: var(--text); }
+
+  .nav-btn.active {
+    background: rgba(0,229,255,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,255,0.2);
+  }
+
+  .method-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .GET  { background: rgba(0,230,118,0.15); color: var(--success); }
+  .POST { background: rgba(0,229,255,0.15); color: var(--accent); }
+  .PUT  { background: rgba(255,215,64,0.15); color: var(--warn); }
+  .DEL  { background: rgba(255,82,82,0.15);  color: var(--error); }
+
+  /* FORM PANEL */
+  .form-panel {
+    border-right: 1px solid var(--border);
+    padding: 28px;
+    overflow-y: auto;
+  }
+
+  .panel-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+
+  .panel-subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  .endpoint-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    font-size: 12px;
+  }
+
+  .endpoint-method {
+    font-weight: 700;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 5px;
+  }
+
+  .endpoint-url { color: var(--muted); word-break: break-all; }
+
+  label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  input, textarea {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    margin-bottom: 14px;
+  }
+
+  input:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 120px; }
+
+  .send-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    color: #000;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 800;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.5px;
+  }
+
+  .send-btn:hover { opacity: 0.9; }
+  .send-btn:active { transform: scale(0.98); }
+
+  /* RESPONSE PANEL */
+  .response-panel {
+    padding: 28px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .response-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .response-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .response-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .status-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  .status-2xx { background: rgba(0,230,118,0.15); color: var(--success); border: 1px solid rgba(0,230,118,0.3); }
+  .status-4xx { background: rgba(255,82,82,0.15); color: var(--error); border: 1px solid rgba(255,82,82,0.3); }
+  .status-5xx { background: rgba(255,82,82,0.15); color: var(--error); border: 1px solid rgba(255,82,82,0.3); }
+
+  .time-badge {
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--card);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .response-body {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 300px;
+    position: relative;
+  }
+
+  .placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    gap: 8px;
+  }
+
+  .placeholder-icon { font-size: 36px; opacity: 0.3; }
+  .placeholder-text { font-size: 13px; }
+
+  /* JSON syntax highlight */
+  .json-key   { color: var(--accent); }
+  .json-str   { color: #a8ff78; }
+  .json-num   { color: var(--warn); }
+  .json-bool  { color: var(--accent2); }
+  .json-null  { color: var(--muted); }
+
+  /* Loading */
+  .loading {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .field-group { margin-bottom: 4px; }
+
+  * { scrollbar-width: thin; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">A</div>
+  <div>
+    <h1>API Tester</h1>
+    <p>BT_2_3_NNPTUD — localhost:3000</p>
+  </div>
+  <div class="status-dot">
+    <div class="dot"></div>
+    <span>localhost:3000</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Roles</div>
+      <button class="nav-btn active" onclick="selectRoute('createRole')">
+        <span class="method-badge POST">POST</span> Create Role
+      </button>
+      <button class="nav-btn" onclick="selectRoute('getAllRoles')">
+        <span class="method-badge GET">GET</span> Get All
+      </button>
+      <button class="nav-btn" onclick="selectRoute('getRoleById')">
+        <span class="method-badge GET">GET</span> Get by ID
+      </button>
+      <button class="nav-btn" onclick="selectRoute('updateRole')">
+        <span class="method-badge PUT">PUT</span> Update
+      </button>
+      <button class="nav-btn" onclick="selectRoute('deleteRole')">
+        <span class="method-badge DEL">DEL</span> Soft Delete
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Users</div>
+      <button class="nav-btn" onclick="selectRoute('createUser')">
+        <span class="method-badge POST">POST</span> Create User
+      </button>
+      <button class="nav-btn" onclick="selectRoute('getAllUsers')">
+        <span class="method-badge GET">GET</span> Get All
+      </button>
+      <button class="nav-btn" onclick="selectRoute('getUserById')">
+        <span class="method-badge GET">GET</span> Get by ID
+      </button>
+      <button class="nav-btn" onclick="selectRoute('updateUser')">
+        <span class="method-badge PUT">PUT</span> Update
+      </button>
+      <button class="nav-btn" onclick="selectRoute('deleteUser')">
+        <span class="method-badge DEL">DEL</span> Soft Delete
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Status</div>
+      <button class="nav-btn" onclick="selectRoute('enableUser')">
+        <span class="method-badge POST">POST</span> Enable
+      </button>
+      <button class="nav-btn" onclick="selectRoute('disableUser')">
+        <span class="method-badge POST">POST</span> Disable
+      </button>
+    </div>
+  </nav>
+
+  <!-- FORM PANEL -->
+  <div class="form-panel">
+    <div class="panel-title" id="formTitle">Create Role</div>
+    <div class="panel-subtitle" id="formSubtitle">Tạo một role mới</div>
+
+    <div class="endpoint-bar">
+      <span class="endpoint-method POST method-badge" id="methodLabel">POST</span>
+      <span class="endpoint-url" id="endpointLabel">http://localhost:3000/api/roles</span>
+    </div>
+
+    <div id="formFields"></div>
+
+    <button class="send-btn" onclick="sendRequest()">▶ Send Request</button>
+  </div>
+
+  <!-- RESPONSE PANEL -->
+  <div class="response-panel">
+    <div class="response-header">
+      <div class="response-title">Response</div>
+      <div class="response-meta">
+        <span class="status-badge" id="statusBadge" style="display:none"></span>
+        <span class="time-badge" id="timeBadge" style="display:none"></span>
+      </div>
+    </div>
+    <div class="response-body" id="responseBody">
+      <div class="placeholder">
+        <div class="placeholder-icon">⚡</div>
+        <div class="placeholder-text">Chọn endpoint và nhấn Send</div>
+      </div>
+    </div>
+    <div class="loading" id="loadingEl">
+      <div class="spinner"></div> Đang gửi request...
+    </div>
+  </div>
+
+</div>
+
+<script>
+const BASE = 'http://localhost:3000/api';
+
+const routes = {
+  // ROLE
+  createRole: {
+    method: 'POST', url: `${BASE}/roles`,
+    title: 'Create Role', subtitle: 'Tạo một role mới',
+    fields: [
+      { name: 'name', label: 'name *', placeholder: 'Admin' },
+      { name: 'description', label: 'description', placeholder: 'Quản trị viên' },
+    ]
+  },
+  getAllRoles: {
+    method: 'GET', url: `${BASE}/roles`,
+    title: 'Get All Roles', subtitle: 'Lấy tất cả roles (isDeleted: false)',
+    fields: []
+  },
+  getRoleById: {
+    method: 'GET', url: `${BASE}/roles/:id`,
+    title: 'Get Role by ID', subtitle: 'Lấy role theo _id',
+    fields: [{ name: 'id', label: 'Role ID *', placeholder: '69a4e9a708e46cc70c25d09e', isParam: true }]
+  },
+  updateRole: {
+    method: 'PUT', url: `${BASE}/roles/:id`,
+    title: 'Update Role', subtitle: 'Cập nhật thông tin role',
+    fields: [
+      { name: 'id', label: 'Role ID *', placeholder: '69a4e9a708e46cc70c25d09e', isParam: true },
+      { name: 'name', label: 'name', placeholder: 'SuperAdmin' },
+      { name: 'description', label: 'description', placeholder: 'Mô tả mới' },
+    ]
+  },
+  deleteRole: {
+    method: 'DELETE', url: `${BASE}/roles/:id`,
+    title: 'Soft Delete Role', subtitle: 'Xoá mềm role (isDeleted → true)',
+    fields: [{ name: 'id', label: 'Role ID *', placeholder: '69a4e9a708e46cc70c25d09e', isParam: true }]
+  },
+
+  // USER
+  createUser: {
+    method: 'POST', url: `${BASE}/users`,
+    title: 'Create User', subtitle: 'Tạo một user mới',
+    fields: [
+      { name: 'username', label: 'username *', placeholder: 'johndoe' },
+      { name: 'password', label: 'password *', placeholder: '••••••••', type: 'password' },
+      { name: 'email',    label: 'email *', placeholder: 'john@example.com' },
+      { name: 'fullName', label: 'fullName', placeholder: 'John Doe' },
+      { name: 'role',     label: 'role (ObjectID)', placeholder: '69a4e9a708e46cc70c25d09e' },
+    ]
+  },
+  getAllUsers: {
+    method: 'GET', url: `${BASE}/users`,
+    title: 'Get All Users', subtitle: 'Lấy tất cả users (isDeleted: false)',
+    fields: []
+  },
+  getUserById: {
+    method: 'GET', url: `${BASE}/users/:id`,
+    title: 'Get User by ID', subtitle: 'Lấy user theo _id',
+    fields: [{ name: 'id', label: 'User ID *', placeholder: '...objectid...', isParam: true }]
+  },
+  updateUser: {
+    method: 'PUT', url: `${BASE}/users/:id`,
+    title: 'Update User', subtitle: 'Cập nhật thông tin user',
+    fields: [
+      { name: 'id',       label: 'User ID *', placeholder: '...objectid...', isParam: true },
+      { name: 'fullName', label: 'fullName', placeholder: 'John Doe' },
+      { name: 'avatarUrl',label: 'avatarUrl', placeholder: 'https://...' },
+      { name: 'role',     label: 'role (ObjectID)', placeholder: '69a4e9a708e46cc70c25d09e' },
+    ]
+  },
+  deleteUser: {
+    method: 'DELETE', url: `${BASE}/users/:id`,
+    title: 'Soft Delete User', subtitle: 'Xoá mềm user (isDeleted → true)',
+    fields: [{ name: 'id', label: 'User ID *', placeholder: '...objectid...', isParam: true }]
+  },
+
+  // ENABLE / DISABLE
+  enableUser: {
+    method: 'POST', url: `${BASE}/users/enable`,
+    title: 'Enable User', subtitle: 'Chuyển status → true nếu email & username đúng',
+    fields: [
+      { name: 'email',    label: 'email *', placeholder: 'john@example.com' },
+      { name: 'username', label: 'username *', placeholder: 'johndoe' },
+    ]
+  },
+  disableUser: {
+    method: 'POST', url: `${BASE}/users/disable`,
+    title: 'Disable User', subtitle: 'Chuyển status → false nếu email & username đúng',
+    fields: [
+      { name: 'email',    label: 'email *', placeholder: 'john@example.com' },
+      { name: 'username', label: 'username *', placeholder: 'johndoe' },
+    ]
+  },
+};
+
+let current = 'createRole';
+
+function selectRoute(key) {
+  current = key;
+  const r = routes[key];
+
+  // Update sidebar active
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+
+  // Update form
+  document.getElementById('formTitle').textContent = r.title;
+  document.getElementById('formSubtitle').textContent = r.subtitle;
+
+  const mLabel = document.getElementById('methodLabel');
+  mLabel.textContent = r.method;
+  mLabel.className = `method-badge ${r.method === 'DELETE' ? 'DEL' : r.method}`;
+
+  document.getElementById('endpointLabel').textContent = r.url;
+
+  // Render fields
+  const container = document.getElementById('formFields');
+  container.innerHTML = '';
+  r.fields.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'field-group';
+    div.innerHTML = `
+      <label>${f.label}</label>
+      <input type="${f.type || 'text'}" id="field_${f.name}" placeholder="${f.placeholder}" />
+    `;
+    container.appendChild(div);
+  });
+
+  // Reset response
+  document.getElementById('responseBody').innerHTML = `
+    <div class="placeholder">
+      <div class="placeholder-icon">⚡</div>
+      <div class="placeholder-text">Nhấn Send để gọi API</div>
+    </div>`;
+  document.getElementById('statusBadge').style.display = 'none';
+  document.getElementById('timeBadge').style.display = 'none';
+}
+
+async function sendRequest() {
+  const r = routes[current];
+  let url = r.url;
+  const body = {};
+
+  r.fields.forEach(f => {
+    const val = document.getElementById(`field_${f.name}`)?.value.trim();
+    if (f.isParam) {
+      url = url.replace(`:${f.name}`, val || `:${f.name}`);
+    } else if (val) {
+      body[f.name] = val;
+    }
+  });
+
+  const loadingEl = document.getElementById('loadingEl');
+  const responseBody = document.getElementById('responseBody');
+  responseBody.innerHTML = '';
+  loadingEl.style.display = 'flex';
+
+  const start = Date.now();
+  try {
+    const options = { method: r.method, headers: { 'Content-Type': 'application/json' } };
+    if (!['GET', 'DELETE'].includes(r.method) && Object.keys(body).length) {
+      options.body = JSON.stringify(body);
+    }
+
+    const res = await fetch(url, options);
+    const elapsed = Date.now() - start;
+    const data = await res.json();
+
+    // Status badge
+    const sb = document.getElementById('statusBadge');
+    sb.style.display = 'inline-block';
+    sb.textContent = res.status;
+    sb.className = `status-badge status-${Math.floor(res.status/100)}xx`;
+
+    const tb = document.getElementById('timeBadge');
+    tb.style.display = 'inline-block';
+    tb.textContent = `${elapsed}ms`;
+
+    responseBody.innerHTML = syntaxHighlight(JSON.stringify(data, null, 2));
+  } catch (err) {
+    const elapsed = Date.now() - start;
+    document.getElementById('statusBadge').style.display = 'none';
+    document.getElementById('timeBadge').style.display = 'inline-block';
+    document.getElementById('timeBadge').textContent = `${elapsed}ms`;
+    responseBody.innerHTML = `<span style="color:var(--error)">❌ Lỗi kết nối: ${err.message}\n\nHãy chắc chắn server đang chạy:\nnode app.js</span>`;
+  } finally {
+    loadingEl.style.display = 'none';
+  }
+}
+
+function syntaxHighlight(json) {
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
+    let cls = 'json-num';
+    if (/^"/.test(match)) {
+      cls = /:$/.test(match) ? 'json-key' : 'json-str';
+    } else if (/true|false/.test(match)) {
+      cls = 'json-bool';
+    } else if (/null/.test(match)) {
+      cls = 'json-null';
+    }
+    return `<span class="${cls}">${match}</span>`;
+  });
+}
+
+// Init
+selectRoute('createRole');
+document.querySelector('.nav-btn').classList.add('active');
+</script>
+</body>
+</html>
